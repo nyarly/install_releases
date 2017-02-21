@@ -74,39 +74,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	byVersion := make(map[semv.Version]*GHRelease)
-	byPrefix := make(map[string]*GHRelease)
-
-	for n := range rels {
-		rel := &rels[n]
-		rel.linkSuffixes = []string{}
-		rel.version, err = semv.Parse(rel.Version)
-		if err != nil {
-			rel.version = semv.MustParse(versionStrip.ReplaceAllString(rel.Version, ""))
-
-		}
-		rel.publishTime, err = time.Parse(time.RFC3339, rel.PublishTime)
-
-		if rel.version.IsPrerelease() {
-			continue
-		}
-
-		if existing, there := byVersion[rel.version]; !there || existing.publishTime.Before(rel.publishTime) {
-			byVersion[rel.version] = rel
-			updatePrefixes(byPrefix, "M.m.p", rel)
-			updatePrefixes(byPrefix, "M.m", rel)
-			updatePrefixes(byPrefix, "M", rel)
-			updatePrefixes(byPrefix, "XXX", rel)
-		}
-	}
-
-	for prefix, rel := range byPrefix {
-		if prefix == "XXX" {
-			rel.linkSuffixes = append(rel.linkSuffixes, "")
-			continue
-		}
-		rel.linkSuffixes = append(rel.linkSuffixes, "-"+prefix)
-	}
+	resolveReleases(rels)
 
 	err = os.MkdirAll(opts.store, os.ModePerm)
 	if err != nil {
@@ -116,10 +84,10 @@ func main() {
 	namePattern := regexp.MustCompile(opts.assetPattern)
 
 	wait := &sync.WaitGroup{}
-	wait.Add(len(byVersion))
-	for _, rel := range byVersion {
+	wait.Add(len(rels))
+	for _, rel := range rels {
 
-		go func(rel *GHRelease) {
+		go func(rel GHRelease) {
 			rel.fetch(client, opts.store, opts.binDir, namePattern)
 			wait.Done()
 		}(rel)
@@ -284,4 +252,41 @@ func decode(from io.ReadCloser, to interface{}) error {
 	buf := &loggingReader{from}
 	dec := json.NewDecoder(buf)
 	return dec.Decode(to)
+}
+
+func resolveReleases(rels []GHRelease) {
+	var err error
+	byVersion := make(map[semv.Version]*GHRelease)
+	byPrefix := make(map[string]*GHRelease)
+
+	for n := range rels {
+		rel := &rels[n]
+		rel.linkSuffixes = []string{}
+		rel.version, err = semv.Parse(rel.Version)
+		if err != nil {
+			rel.version = semv.MustParse(versionStrip.ReplaceAllString(rel.Version, ""))
+
+		}
+		rel.publishTime, err = time.Parse(time.RFC3339, rel.PublishTime)
+
+		if rel.version.IsPrerelease() {
+			continue
+		}
+
+		if existing, there := byVersion[rel.version]; !there || existing.publishTime.Before(rel.publishTime) {
+			byVersion[rel.version] = rel
+			updatePrefixes(byPrefix, "M.m.p", rel)
+			updatePrefixes(byPrefix, "M.m", rel)
+			updatePrefixes(byPrefix, "M", rel)
+			updatePrefixes(byPrefix, "XXX", rel)
+		}
+	}
+
+	for prefix, rel := range byPrefix {
+		if prefix == "XXX" {
+			rel.linkSuffixes = append(rel.linkSuffixes, "")
+			continue
+		}
+		rel.linkSuffixes = append(rel.linkSuffixes, "-"+prefix)
+	}
 }
