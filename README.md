@@ -1,6 +1,6 @@
 # Install Releases
 
-install_releases is a command line tool
+`install_releases` is a command line tool
 to aid the installation of software
 for automated agents.
 The original use case was
@@ -41,10 +41,11 @@ It's treated as a regex, so `.*` would choose everything.
 Install releases will make a query to Github
 for the releases associated with your project,
 and will look for releases that are named
-with a sematic version
-(possibly as a package-name suffix, like "package-1.2.3").
-It will skip "prerelease" (i.e. `1.2.3-rc1`) versions.
-Then it looks for tarballs attached as an asset to the release.
+with a semantic version
+(possibly as a package-name suffix, like `package-1.2.3`).
+It will skip "pre-release" (i.e. `1.2.3-rc1`) versions.
+Then it looks for tarballs attached as an asset to the release
+that match the asset pattern argument.
 It pulls those down,
 unpacks them into a "store" directory
 and symlinks executables into the install directory provided
@@ -52,6 +53,7 @@ and symlinks executables into the install directory provided
 These symlinks are named with the version,
 so if there's `program` in the `1.2.3` tarball,
 it'll be linked as `program-1.2.3`.
+
 Additionally,
 the most advanced subversion within a minor version will get an extra link,
 the most advanced minor version will get an extra link,
@@ -61,9 +63,18 @@ then its `program` will get a total of 4 links:
 `program-1.2.3`, `program-1.2`, `program-1`, and `program`.
 This means that consumers of these executables can optimistically use `program`,
 and if changes to the interface break their use,
-they can pin to an earlier versionin a cheap and cheerful way.
+they can pin to an earlier version in a cheap and cheerful way.
 
 Finally, each of the unpacked archives get a copy of their release JSON,
 which `install_releases` uses to determine if their archive needs to be downloaded in the future,
-so a second install_releases call immediately after a first one
-should incur only an HTTP round-trip to github and return quickly.
+so that if `install_releases` is called in quick succession,
+subsequent calls should incur only an HTTP round-trip to github and return quickly.
+
+### Github API note
+
+Github exerts a 60/hour restriction on unauthenticated API calls per IP address,
+so you'll either want
+to restrict use of `install_releases`
+or deploy a no-permission token in a `RELEASE_TOKEN` environment variable,
+which `install_releases` will then use for its github access
+(which will increase the limit to 5000/hour.)
