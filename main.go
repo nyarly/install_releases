@@ -264,8 +264,11 @@ func resolveReleases(rels []GHRelease) {
 		rel.linkSuffixes = []string{}
 		rel.version, err = semv.Parse(rel.Version)
 		if err != nil {
-			rel.version = semv.MustParse(versionStrip.ReplaceAllString(rel.Version, ""))
-
+			rel.version, err = semv.Parse(versionStrip.ReplaceAllString(rel.Version, ""))
+			if err != nil {
+				log.Printf("Cannot parse version %q: %v", rel.Version, err)
+				continue
+			}
 		}
 		rel.publishTime, err = time.Parse(time.RFC3339, rel.PublishTime)
 
