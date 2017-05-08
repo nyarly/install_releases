@@ -180,7 +180,7 @@ func (asset *ReleaseAsset) fetch(cl *GHClient, basePath, linksPath string, linkS
 						log.Fatal(err)
 					}
 					err = os.Remove(exeLink)
-					if err != nil {
+					if err != nil && !os.IsNotExist(err) {
 						log.Fatal(err)
 					}
 					err = os.Symlink(newName, exeLink)
