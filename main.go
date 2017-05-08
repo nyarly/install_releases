@@ -175,8 +175,18 @@ func (asset *ReleaseAsset) fetch(cl *GHClient, basePath, linksPath string, linkS
 				for _, suffix := range linkSuffixes {
 					exeLink := filepath.Join(append([]string{linksPath}, parts...)...) + suffix
 					log.Printf("linking %s to %s", newName, exeLink)
-					os.MkdirAll(filepath.Dir(exeLink), os.ModePerm)
-					os.Symlink(newName, exeLink)
+					err = os.MkdirAll(filepath.Dir(exeLink), os.ModePerm)
+					if err != nil {
+						log.Fatal(err)
+					}
+					err = os.Remove(exeLink)
+					if err != nil {
+						log.Fatal(err)
+					}
+					err = os.Symlink(newName, exeLink)
+					if err != nil {
+						log.Fatal(err)
+					}
 				}
 			}
 		}
