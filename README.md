@@ -12,7 +12,7 @@ but it may be flexible enough for others uses.
 It's pithy to suggest that
 
 ```
-go get github.com/nyarly/install_releases
+go get github.com/opentable/install_releases
 ```
 
 will do everything you need,
