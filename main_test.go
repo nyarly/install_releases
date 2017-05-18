@@ -25,6 +25,7 @@ func TestResolveReleases(t *testing.T) {
 	found := make(map[string]bool)
 
 	found["0.1.9"] = false
+	found["0.5.2"] = false
 
 	resolveReleases(rels)
 
@@ -40,7 +41,7 @@ func TestResolveReleases(t *testing.T) {
 
 		switch rel.version.String() {
 		case "0.5.2":
-			found["0.1.9"] = true
+			found["0.5.2"] = true
 			expectSuffixes(t, rel, "", "-0", "-0.5", "-0.5.2")
 		case "0.1.9":
 			found["0.1.9"] = true
