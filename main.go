@@ -66,6 +66,8 @@ func main() {
 	opts := parseOpts()
 	log.SetFlags(log.Lshortfile)
 
+	//log.Printf(os.Getenv("RELEASE_TOKEN"))
+
 	client := newGHClient(os.Getenv("RELEASE_TOKEN"))
 
 	rels := []GHRelease{}
@@ -213,6 +215,7 @@ func (cl *GHClient) fetch(path string) (*http.Response, error) {
 func (cl *GHClient) fetchJSON(path string, into interface{}) error {
 	res, err := cl.fetch(path)
 	if err != nil {
+		log.Println("Failed to fetch patch")
 		return err
 	}
 	defer res.Body.Close()
@@ -254,7 +257,7 @@ type loggingReader struct {
 
 func (reader *loggingReader) Read(p []byte) (n int, err error) {
 	n, err = reader.inner.Read(p)
-	//log.Print(n, err, string(p[0:n]))
+	log.Print(n, err, string(p[0:n]))
 	return
 }
 
