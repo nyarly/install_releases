@@ -68,6 +68,10 @@ func main() {
 
 	//log.Printf(os.Getenv("RELEASE_TOKEN"))
 
+	if _, exists := os.LookupEnv("RELEASE_TOKEN"); exists == false {
+		log.Println("WARNING: Release token is not set!")
+	}
+
 	client := newGHClient(os.Getenv("RELEASE_TOKEN"))
 
 	rels := []GHRelease{}
