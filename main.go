@@ -82,6 +82,8 @@ func main() {
 
 	resolveReleases(rels)
 
+  rels = cullReleases(rels, opts.limit)
+
 	err = os.MkdirAll(opts.store, os.ModePerm)
 	if err != nil {
 		log.Fatal(err)
@@ -309,4 +311,48 @@ func resolveReleases(rels []GHRelease) {
 		}
 		rel.linkSuffixes = append(rel.linkSuffixes, "-"+prefix)
 	}
+}
+
+func cullReleases(rels []GHRelease, vpat string) []GHRelease {
+  v, err := semv.Parse(vpat)
+  if err != nil {
+    log.Fatal(err)
+  }
+  maj, min, sub := v.Major, v.Minor, v.Patch
+  maxMaj := 0
+  maxMin := map[int]int{}
+  maxPatch := map[int]map[int]int{}
+
+  for _, rel := range rels {
+    v := rel.version
+    if v.Major > maxMaj {
+      maxMaj = v.Major
+    }
+    if v.Minor > maxMin[v.Major] {
+      maxMin[v.Major] = v.Minor
+    }
+    if maxPatch[v.Major] == nil {
+      maxPatch[v.Major] = map[int]int{}
+    }
+    if v.Patch > maxPatch[v.Major][v.Minor] {
+      maxPatch[v.Major][v.Minor] = v.Patch
+    }
+  }
+
+  culled := []GHRelease{}
+
+  for _, rel := range rels {
+    if rel.version.Major < maxMaj - maj {
+      continue
+    }
+    if rel.version.Minor < maxMin[rel.version.Major] - min {
+      continue
+    }
+    if rel.version.Patch < maxPatch[rel.version.Major][rel.version.Minor] - sub {
+      continue
+    }
+    culled = append(culled, rel)
+  }
+
+  return culled
 }

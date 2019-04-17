@@ -7,19 +7,52 @@ import (
 	"time"
 )
 
+func TestCullReleases(t *testing.T) {
+	rels := loadTestReleases(t)
+	resolveReleases(rels)
+
+	fetched := map[string]bool{}
+
+	for _, rel := range rels {
+		fetched[rel.version.String()] = true
+	}
+
+	culled := cullReleases(rels, "2.10.3")
+
+	found := map[string]bool{}
+
+	for _, rel := range culled {
+		found[rel.version.String()] = true
+	}
+
+	expectVersion := func(v string) {
+		if !fetched[v] {
+			t.Errorf("Version %q was expected but not in test set!", v)
+			return
+		}
+		if !found[v] {
+			t.Errorf("Version %q was expected but missing", v)
+		}
+	}
+
+	expectCulled := func(v string) {
+		if !fetched[v] {
+			t.Errorf("Version %q was expected but not in test set!", v)
+			return
+		}
+		if found[v] {
+			t.Errorf("Version %q was expected to be culled, but present!", v)
+		}
+	}
+
+	expectVersion("0.5.2")
+	expectVersion("0.1.9")
+	expectCulled("0.1.4")
+	expectCulled("0.1")
+}
+
 func TestResolveReleases(t *testing.T) {
-	file, err := os.Open("testdata/releases.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	dec := json.NewDecoder(file)
-	rels := []GHRelease{}
-	err = dec.Decode(&rels)
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	rels := loadTestReleases(t)
 	//log.Printf("%#v\n\n\n", rels)
 
 	found := make(map[string]bool)
@@ -66,6 +99,22 @@ func TestResolveReleases(t *testing.T) {
 			t.Errorf("Didn't find a release with version %s", ver)
 		}
 	}
+}
+
+func loadTestReleases(t *testing.T) []GHRelease {
+	file, err := os.Open("testdata/releases.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	dec := json.NewDecoder(file)
+	rels := []GHRelease{}
+	err = dec.Decode(&rels)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return rels
 }
 
 func expectSuffixes(t *testing.T, rel GHRelease, sufs ...string) {

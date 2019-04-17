@@ -12,6 +12,7 @@ type options struct {
 	assetPattern string
 	binDir       string
 	store        string
+  limit        string
 }
 
 const docstring = `
@@ -19,6 +20,7 @@ Usage: install_releases [options] <github-repo> <asset-pattern> <bin-dir>
 
 Options:
 	--store=<dir>  The base directory to download releases to. [default: /var/store]
+	--limit=<version-pattern>  The base directory to download releases to. [default: 999.999.999]
 `
 
 func parseOpts() *options {
