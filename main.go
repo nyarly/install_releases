@@ -67,7 +67,6 @@ func main() {
 	log.SetFlags(log.Lshortfile)
 
 	//log.Printf(os.Getenv("RELEASE_TOKEN"))
-
 	if _, exists := os.LookupEnv("RELEASE_TOKEN"); exists == false {
 		log.Println("WARNING: Release token is not set!")
 	}
@@ -208,20 +207,27 @@ func (cl *GHClient) fetch(path string) (*http.Response, error) {
 	}
 
 	req, err := http.NewRequest("GET", url.String(), nil)
+
+	log.Printf("Request header= %s\nerr=%s\n", req.Header, err)
 	if err != nil {
 		return nil, err
 	}
 
 	if url.Host == cl.url.Host {
-		return cl.http.Do(req)
+		response, err := cl.http.Do(req)
+		log.Printf("Response header:= %s\nerr =%s\n", response.Header, err)
+		return response, err
 	}
-	return cl.generalHTTP.Do(req)
+	response, err := cl.generalHTTP.Do(req)
+
+	log.Printf("Response header:= %s\nerr =%s\n", response.Header, err)
+	return response, err
 }
 
 func (cl *GHClient) fetchJSON(path string, into interface{}) error {
 	res, err := cl.fetch(path)
 	if err != nil {
-		log.Println("Failed to fetch patch")
+		log.Println("Failed to fetch path")
 		return err
 	}
 	defer res.Body.Close()
@@ -263,7 +269,7 @@ type loggingReader struct {
 
 func (reader *loggingReader) Read(p []byte) (n int, err error) {
 	n, err = reader.inner.Read(p)
-	log.Print(n, err, string(p[0:n]))
+	log.Print(n, err)
 	return
 }
 
